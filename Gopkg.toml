@@ -3,12 +3,16 @@
 # Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
 # for detailed Gopkg.toml documentation.
 #
-required = ["github.com/icza/gowut"]
+required = [
+    "github.com/icza/gowut/gwu",
+    "github.com/russross/blackfriday",
+    "github.com/gohugoio/hugo/parser"
+]
 # ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
 #
-# [[constraint]]
-#   name = "github.com/user/project"
-#   version = "1.0.0"
+[[constraint]]
+  name = "github.com/russross/blackfriday"
+  version = "2.0.0"
 #
 # [[constraint]]
 #   name = "github.com/user/project2"
