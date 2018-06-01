@@ -9,7 +9,7 @@ import (
 
 	"github.com/gohugoio/hugo/parser"
 	"github.com/icza/gowut/gwu"
-	"github.com/russross/blackfriday"
+	"gopkg.in/russross/blackfriday.v2"
 )
 
 func buildHTML(doc string) gwu.Comp {
