@@ -1,0 +1,43 @@
+html{
+    line-height: 1.5;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu",  Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
+
+#sidebar {
+    width: 200px;
+    float: left;
+}
+
+#sidebar a {
+    background-color: #ccc;
+    display: block; /* Make the links appear below each other */
+    padding: 12px; /* Add some padding */
+    text-decoration: none; /* Remove underline from links */
+}
+
+#sidebar a:hover {
+    background-color: #aaa; /* Dark grey background on mouse-over */
+}
+
+#sidebar a.active {
+    background-color: #4CAF50; /* Add a green color to the "active/current" link */
+    color: white;
+}
+
+#content {
+    margin-left: 200px;
+    padding: 0 1em;
+    max-width: 600px;
+}
+
+.clear {
+    clear: both;
+}
