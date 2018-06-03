@@ -2,29 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title></title>
+    <title>Prjbrain</title>
     <link rel="stylesheet" href="/static/sanitize.css">
     <link rel="stylesheet" href="/static/style.css">
   </head>
   <body>
+    <div id="header">Prjbrain</div>
     <div id="sidebar">
-      <a href="/">Start</a>
+      <a href="/">Overview</a>
       <a href="/details">Detailed report</a>
-      <a href="/report">Status Report</a>
       <a href="/other">Other</a>
     </div>
     <div id="content">
-       <ul>
-      {{ range . }}
-        <li>{{ .DocNr }} - {{ .Title }}
-          <ul>
-          {{ range .Files }}
-            <li>{{.}}</li>
-          {{ end }}
-          </ul>
-        </li>
-      {{ end }}
-      </ul>
+      {{ template "body" . }}
     </div>
     <div class="clear"></div>
   </body>

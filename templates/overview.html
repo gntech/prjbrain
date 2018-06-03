@@ -1,0 +1,16 @@
+{{ define "body" }}
+<h1>Overview</h1>
+
+<ul>
+{{ range . }}
+  <li>{{ .DocNr }} - {{ .Title }}
+    <ul>
+    {{ range .Files }}
+      <li>{{.}}</li>
+    {{ end }}
+    </ul>
+  </li>
+{{ end }}
+</ul>
+
+{{ end }}

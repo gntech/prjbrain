@@ -24,9 +24,21 @@ type Doc struct {
 	Files    []string
 }
 
-func startRender(w http.ResponseWriter, r *http.Request) {
+func overviewHandler(w http.ResponseWriter, r *http.Request) {
 	p := docMap
-	t, _ := template.ParseFiles("templates/index.html")
+	t := template.Must(template.ParseFiles("templates/base.html", "templates/overview.html"))
+	t.Execute(w, p)
+}
+
+func detailsHandler(w http.ResponseWriter, r *http.Request) {
+	p := docMap
+	t := template.Must(template.ParseFiles("templates/base.html", "templates/details.html"))
+	t.Execute(w, p)
+}
+
+func otherHandler(w http.ResponseWriter, r *http.Request) {
+	p := docMap
+	t := template.Must(template.ParseFiles("templates/base.html", "templates/other.html"))
 	t.Execute(w, p)
 }
 
@@ -48,7 +60,7 @@ func searchForDocs(rootDir string) {
 				for k, v := range docMap {
 					if strings.HasPrefix(info.Name(), k) {
 						docMap[k].Files = append(v.Files, path)
-						fmt.Print(v.Files)
+						// fmt.Println(v.Files)
 					}
 				}
 			}
@@ -104,20 +116,25 @@ var projectNumber string
 var projectName string
 
 func main() {
-	initDocMap("testfiles/Nummerliggare.xlsx")
+	initDocMap("testfiles/Nummerliggare.xlsm")
 	searchForDocs(".")
 
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	r.HandleFunc("/", startRender)
+	r.HandleFunc("/", overviewHandler)
+	r.HandleFunc("/details", detailsHandler)
+	r.HandleFunc("/other", otherHandler)
 	http.Handle("/", r)
 
+	addr := "127.0.0.1:8000"
 	srv := &http.Server{
 		Handler: r,
-		Addr:    "127.0.0.1:8000",
+		Addr:    addr,
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
+	fmt.Println("Prjbrain is up and running!")
+	fmt.Println("Please go to " + addr + " in your favourite web browser")
 	log.Fatal(srv.ListenAndServe())
 }
