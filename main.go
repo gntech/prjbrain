@@ -10,18 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gohugoio/hugo/parser"
 	"github.com/gorilla/mux"
 	"github.com/tealeg/xlsx"
-	"gopkg.in/russross/blackfriday.v2"
 )
-
-// Page struct
-type Page struct {
-	Title   string
-	Summary string
-	Body    template.HTML
-}
 
 // Doc struct is a generic document
 type Doc struct {
@@ -31,39 +22,6 @@ type Doc struct {
 	Revision string
 	Markdown bool
 	Files    []string
-}
-
-func loadDoc(name string) (*Page, error) {
-	// Open the source markdown file
-	r, err := os.Open(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer r.Close()
-
-	// Read the content from the file
-	page, err := parser.ReadFrom(r)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Extract the metadata
-	metadata, err := page.Metadata()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	output := blackfriday.Run(page.Content())
-	html := template.HTML(output[:])
-	return &Page{Title: metadata["title"].(string), Summary: metadata["summary"].(string), Body: html}, nil
-}
-
-func docsRender(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fmt.Println(vars["document"])
-	p, _ := loadDoc(vars["document"])
-	t, _ := template.ParseFiles("templates/docs.html")
-	t.Execute(w, p)
 }
 
 func startRender(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +99,6 @@ func initDocMap(nrLogFile string) {
 }
 
 // Global variables
-// var docList []Doc
 var docMap map[string]*Doc
 var projectNumber string
 var projectName string
@@ -153,7 +110,6 @@ func main() {
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	r.HandleFunc("/", startRender)
-	r.HandleFunc("/rendermarkdown/{document}", docsRender)
 	http.Handle("/", r)
 
 	srv := &http.Server{
