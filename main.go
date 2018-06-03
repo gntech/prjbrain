@@ -116,8 +116,13 @@ var projectNumber string
 var projectName string
 
 func main() {
+	rootDir := "."
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		log.Fatal(err)
+	}
 	initDocMap("testfiles/Nummerliggare.xlsm")
-	searchForDocs(".")
+	searchForDocs(rootDir)
 
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -134,7 +139,7 @@ func main() {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
-	fmt.Println("Prjbrain is up and running!")
+	fmt.Println("Prjbrain is monitoring " + absRootDir)
 	fmt.Println("Please go to " + addr + " in your favourite web browser")
 	log.Fatal(srv.ListenAndServe())
 }
