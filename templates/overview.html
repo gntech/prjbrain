@@ -2,19 +2,23 @@
 <h1>Overview</h1>
 
 {{ range . }}
+  {{ if gt (len .Files) 0 }}
   <details>
     <summary>{{ .DocNr }} - {{ .Title }}</summary>
-    <ul>
+    <ul class="files">
     {{ range .Files }}
-      <li>{{ .RelPath }}
+      <li>
         <form action="/files" method="get">
           <input type="hidden" name="path" value="{{ .RelPath }}">
-          <input type="submit" value="Open">
+          <input type="submit" value="{{ .RelPath }}">
         </form>
       </li>
     {{ end }}
     </ul>
   </details>
+  {{ else }}
+    <div class="empty">{{ .DocNr }} - {{ .Title }}</div>
+  {{ end }}
 {{ end }}
 
 {{ end }}
