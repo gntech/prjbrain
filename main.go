@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gobuffalo/packr"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 	"github.com/tealeg/xlsx"
@@ -38,6 +39,8 @@ type File struct {
 var docMap map[string]*Doc
 var projectNumber string
 var projectName string
+var tmpl packr.Box
+var static packr.Box
 
 func main() {
 	if len(os.Args) > 1 {
@@ -67,8 +70,11 @@ func main() {
 	initDocMap(viper.GetString("number_log"))
 	searchForDocs(rootDir)
 
+	tmpl = packr.NewBox("./templates")
+	static = packr.NewBox("./static")
+
 	r := mux.NewRouter()
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(static)))
 	r.HandleFunc("/", overviewHandler)
 	r.HandleFunc("/details", detailsHandler)
 	r.HandleFunc("/other", otherHandler)
@@ -108,21 +114,30 @@ func open(url string) error {
 }
 
 func overviewHandler(w http.ResponseWriter, r *http.Request) {
-	p := docMap
-	t := template.Must(template.ParseFiles("templates/base.html", "templates/overview.html"))
-	t.Execute(w, p)
+	t := template.Must(template.New("base").Parse(tmpl.String("base.html")))
+	_, err := t.Parse(tmpl.String("overview.html"))
+	if err != nil {
+		log.Fatalf("Cant parse the template %v", err)
+	}
+	t.Execute(w, docMap)
 }
 
 func detailsHandler(w http.ResponseWriter, r *http.Request) {
-	p := docMap
-	t := template.Must(template.ParseFiles("templates/base.html", "templates/details.html"))
-	t.Execute(w, p)
+	t := template.Must(template.New("base").Parse(tmpl.String("base.html")))
+	_, err := t.Parse(tmpl.String("details.html"))
+	if err != nil {
+		log.Fatalf("Cant parse the template %v", err)
+	}
+	t.Execute(w, docMap)
 }
 
 func otherHandler(w http.ResponseWriter, r *http.Request) {
-	p := docMap
-	t := template.Must(template.ParseFiles("templates/base.html", "templates/other.html"))
-	t.Execute(w, p)
+	t := template.Must(template.New("base").Parse(tmpl.String("base.html")))
+	_, err := t.Parse(tmpl.String("other.html"))
+	if err != nil {
+		log.Fatalf("Cant parse the template %v", err)
+	}
+	t.Execute(w, docMap)
 }
 
 // Files handler opens a local file and then returns to the overview page.

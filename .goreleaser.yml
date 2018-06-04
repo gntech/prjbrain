@@ -7,6 +7,9 @@ builds:
       - linux
     goarch:
       - amd64
+    hooks:
+      pre: packr
+      post: packr clean
 archive:
   format: tar.gz
   files:
