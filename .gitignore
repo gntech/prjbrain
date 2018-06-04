@@ -2,4 +2,5 @@
 vendor/
 *~lock*
 prjbrain
+dist/
 
