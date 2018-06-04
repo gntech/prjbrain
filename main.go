@@ -128,7 +128,7 @@ func otherHandler(w http.ResponseWriter, r *http.Request) {
 // Files handler opens a local file and then returns to the overview page.
 func filesHandler(w http.ResponseWriter, r *http.Request) {
 	go open(r.URL.Query().Get("path"))
-	http.Redirect(w, r, "/", 301)
+	http.Redirect(w, r, "/", 303)
 }
 
 func getInputDir(cf string) string {
