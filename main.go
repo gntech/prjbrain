@@ -57,7 +57,7 @@ func main() {
 	viper.SetDefault("title_col", "B")
 	viper.SetDefault("docnr_col", "C")
 	viper.SetDefault("number_log", "testfiles/Nummerliggare.xlsm")
-	viper.SetDefault("subdir_to_skip", []string{".git"})
+	viper.SetDefault("subdirs_to_skip", []string{".git"})
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
