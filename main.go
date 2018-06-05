@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"baliance.com/gooxml/spreadsheet"
 	"github.com/gobuffalo/packr"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"github.com/tealeg/xlsx"
 )
 
 // Doc struct is a generic document
@@ -51,10 +51,13 @@ func main() {
 	}
 
 	// Add default values to options if not set in config file
-	viper.SetDefault("pn_start_row", 4)
-	viper.SetDefault("title_col", 1)
-	viper.SetDefault("docnr_col", 2)
+	viper.SetDefault("prjnr_cell", "C1")
+	viper.SetDefault("prjtitle_cell", "C2")
+	viper.SetDefault("pn_start_row", 5)
+	viper.SetDefault("title_col", "B")
+	viper.SetDefault("docnr_col", "C")
 	viper.SetDefault("number_log", "testfiles/Nummerliggare.xlsm")
+	viper.SetDefault("subdir_to_skip", []string{".git"})
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
@@ -90,6 +93,7 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 	fmt.Println("Prjbrain is monitoring " + absRootDir + " and serving at " + addr)
+	fmt.Println("Press Ctrl+C to quit")
 	go open("http://" + addr)
 	log.Fatal(srv.ListenAndServe())
 }
@@ -159,29 +163,29 @@ func getInputDir(cf string) string {
 }
 
 func searchForDocs(rootDir string) {
-	subDirToSkip := ".git" // dir/to/walk/skip
-
 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", rootDir, err)
 			return err
 		}
-		if info.IsDir() && info.Name() == subDirToSkip {
+		if info.IsDir() {
+			for _, subDir := range viper.GetStringSlice("subdirs_to_skip") {
+				if info.Name() == subDir {
+					return filepath.SkipDir
+				}
+			}
 			// fmt.Printf("skipping a dir without errors: %+v \n", info.Name())
-			return filepath.SkipDir
 		}
 		if !info.IsDir() {
-			//docList = append(docList, Doc{Path: path, Title: info.Name(), Markdown: strings.HasSuffix(info.Name(), ".md")})
-			if strings.HasPrefix(info.Name(), projectNumber) {
-				for k, v := range docMap {
-					if strings.HasPrefix(info.Name(), k) {
-						relPath, err := filepath.Rel(rootDir, path)
-						if err != nil {
-							log.Fatalf("Cant find current working directory %v", err)
-						}
-						docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath})
-						// fmt.Println(v.Files)
+			for k, v := range docMap {
+				// Convert filenames to lower case when comparing to work around how filenames work in Windows.
+				if strings.HasPrefix(strings.ToLower(info.Name()), strings.ToLower(k)) {
+					relPath, err := filepath.Rel(rootDir, path)
+					if err != nil {
+						log.Fatalf("Cant find current working directory %v", err)
 					}
+					docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath})
+					break
 				}
 			}
 			// fmt.Printf("Add file to list: %q\n", path)
@@ -199,29 +203,32 @@ func searchForDocs(rootDir string) {
 
 func initDocMap(nrLogFile string) {
 	// Open the number log.
-	xlFile, err := xlsx.OpenFile(nrLogFile)
+	xlFile, err := spreadsheet.Open(nrLogFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Choose the first sheet
-	sheet := xlFile.Sheets[0]
+	sheet := xlFile.Sheets()[0]
 	// Get project number from a certain cell
-	projectNumber = sheet.Cell(0, 1).String()
+	projectNumber = sheet.Cell(viper.GetString("prjnr_cell")).GetFormattedValue()
 	// Get project name from a certain cell
-	projectName = sheet.Cell(1, 1).String()
+	projectName = sheet.Cell(viper.GetString("prjtitle_cell")).GetFormattedValue()
+
+	//fmt.Println(projectNumber)
+	//fmt.Println(projectName)
 
 	// Initialize the map that will hold all the docs in the project
 	docMap = make(map[string]*Doc)
 
-	for _, row := range sheet.Rows[viper.GetInt("pn_start_row"):] {
-		docnr, err := row.Cells[viper.GetInt("docnr_col")].FormattedValue()
+	for _, row := range sheet.Rows()[viper.GetInt("pn_start_row")-2:] {
+		docnr := row.Cell(viper.GetString("docnr_col")).GetFormattedValue()
 		if err != nil {
 			log.Fatal(err)
 		}
 		if docnr != "" {
 			// nr := row.Cells[0].String()
-			title := row.Cells[viper.GetInt("title_col")].String()
+			title := row.Cell(viper.GetString("title_col")).GetFormattedValue()
 
 			// Initialize the project document map with the numbers from the number log.
 			docMap[docnr] = &Doc{Title: title, DocNr: docnr}
