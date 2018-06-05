@@ -1,6 +1,7 @@
 # Remove the #-comment from a line to set the config value.
 
-#number_log: Number_log.xlsx  # The path to the .xlsx or .xlsm file which holds the document number list
+# Setting the number_log is mandatory
+number_log: Number_log.xlsx   # The path to the .xlsx or .xlsm file which holds the document number list
 
 #prjnr: P12                   # Explicit project number, will override number from number_log
 #prjname: Project name        # Explicit project name, will override name from number_log
