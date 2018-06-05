@@ -12,6 +12,7 @@ The idea behind Prjbrain is that I by looking through your product development d
 
 ## Planned functionality
 
+* Check for common naming errors, where documents don't follow the projects preffered conventions.
 * Do sanity tests of the files and visually show in the dashboard when something looks wrong.
 * Load the summary from .docx report into the dashboard for easy visualization of the entire project.
 * The ability to parse the `project requirement specifications` and cross reference those to the reports to see where the requirements are fulfilled.
