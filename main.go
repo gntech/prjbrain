@@ -51,6 +51,8 @@ func main() {
 	}
 
 	// Add default values to options if not set in config file
+	viper.SetDefault("prjtitle", "")
+	viper.SetDefault("prjnr", "")
 	viper.SetDefault("prjnr_cell", "C1")
 	viper.SetDefault("prjtitle_cell", "C2")
 	viper.SetDefault("pn_start_row", 5)
@@ -210,13 +212,23 @@ func initDocMap(nrLogFile string) {
 
 	// Choose the first sheet
 	sheet := xlFile.Sheets()[0]
-	// Get project number from a certain cell
-	projectNumber = sheet.Cell(viper.GetString("prjnr_cell")).GetFormattedValue()
-	// Get project name from a certain cell
-	projectName = sheet.Cell(viper.GetString("prjtitle_cell")).GetFormattedValue()
 
-	//fmt.Println(projectNumber)
-	//fmt.Println(projectName)
+	// Get project number from a certain cell if number is not set explicitly in the config
+	if viper.GetString("prjnr") == "" {
+		projectNumber = sheet.Cell(viper.GetString("prjnr_cell")).GetFormattedValue()
+	} else {
+		projectNumber = viper.GetString("prjnr")
+	}
+
+	// Get project name from a certain cell if name is not set explicitly in the config
+	if viper.GetString("prjname") == "" {
+		projectName = sheet.Cell(viper.GetString("prjtitle_cell")).GetFormattedValue()
+	} else {
+		projectName = viper.GetString("prjname")
+	}
+
+	fmt.Println(projectNumber)
+	fmt.Println(projectName)
 
 	// Initialize the map that will hold all the docs in the project
 	docMap = make(map[string]*Doc)
