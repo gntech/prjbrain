@@ -25,7 +25,6 @@ type Doc struct {
 	Title    string
 	Path     string
 	Revision string
-	Markdown bool
 	Files    []File
 }
 
@@ -226,9 +225,6 @@ func initDocMap(nrLogFile string) {
 	} else {
 		projectName = viper.GetString("prjname")
 	}
-
-	fmt.Println(projectNumber)
-	fmt.Println(projectName)
 
 	// Initialize the map that will hold all the docs in the project
 	docMap = make(map[string]*Doc)
