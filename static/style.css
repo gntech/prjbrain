@@ -41,18 +41,30 @@ h1, h2, h3, h4, h5, h6 {
 #content {
     margin-left: 200px;
     padding: 0 1em;
-    max-width: 600px;
+    max-width: 900px;
 }
 
 .clear {
     clear: both;
 }
 
-.files {
-    list-style-type: none;
-}
-
 .empty {
     display: block;
     color: #bbb;
+}
+
+.files {
+    text-align: left;
+}
+
+.file-form {
+    display: inline;
+}
+
+input[type=button], input[type=submit], input[type=reset] {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 2px;
+    text-decoration: none;
 }
