@@ -321,12 +321,14 @@ func parseDocNr(docNr string) (nr string, rev string, err error) {
 	return
 }
 
+// Plain find string regexp
 func getNr(s string) (nr string) {
 	re := regexp.MustCompile(viper.GetString("nr_pattern"))
 	nr = re.FindString(s)
 	return
 }
 
+// To find the rev we need to use submatch since we use boundary rules.
 func getRev(s string) (rev string) {
 	re := regexp.MustCompile(viper.GetString("rev_pattern"))
 	temp := re.FindStringSubmatch(s)
