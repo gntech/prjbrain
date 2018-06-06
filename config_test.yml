@@ -1,0 +1,17 @@
+# Remove the #-comment from a line to set the config value.
+
+# Setting the number_log is mandatory
+number_log: testfiles/Nummerliggare_2.xlsx   # The path to the .xlsx or .xlsm file which holds the document number list
+
+#prjnr: P12                   # Explicit project number, will override number from number_log
+#prjname: Project name        # Explicit project name, will override name from number_log
+#prjnr_cell: C1               # The cell in the number_log which contains the project number
+#prjtitle_cell: C2            # The cell in the number_log which contains the project title
+#pn_start_row: 5              # The first row of the document number list in the number_log
+#title_col: B                 # The column in the list which holds the title or description
+#docnr_col: C                 # The column in the list which holds the document number
+
+#subdirs_to_skip:             # Subdirs to skip
+#  - .git
+#  - Oreg
+#  - Backup

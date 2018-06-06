@@ -1,7 +1,7 @@
 {{ define "body" }}
-<h1>Overview</h1>
+<h1>Overview: {{ .ProjectNumber }} - {{ .ProjectName }}</h1>
 
-{{ range . }}
+{{ range .DocMap }}
   {{ if gt (len .Files) 0 }}
   <details>
     <summary>{{ .DocNr }} - {{ .Title }}</summary>
@@ -21,4 +21,12 @@
   {{ end }}
 {{ end }}
 
+{{ if gt (len .OrphanFiles) 0 }}
+  <h2>Orhpan files</h2>
+  <ul>
+  {{ range .OrphanFiles }}
+    <li>{{ .RelPath }}</li>
+  {{ end }}
+  </ul>
+{{ end }}
 {{ end }}

@@ -50,14 +50,27 @@ type Doc struct {
 type File struct {
 	FilePath string
 	RelPath  string
+	Rev      string
+	DocNr    string
+	Comment  string
+}
+
+// Data struct contains all the data sent to the pages in the web interface
+type Data struct {
+	ProjectName   *string
+	ProjectNumber *string
+	DocMap        *map[string]*Doc
+	OrphanFiles   *[]File
 }
 
 // Global variables
 var docMap map[string]*Doc
+var orphanFiles []File
 var projectNumber string
 var projectName string
 var tmpl packr.Box
 var static packr.Box
+var data Data
 
 func main() {
 	if len(os.Args) > 1 {
@@ -91,6 +104,8 @@ func main() {
 
 	initDocMap(viper.GetString("number_log"))
 	searchForDocs(rootDir)
+
+	data = Data{ProjectName: &projectName, ProjectNumber: &projectNumber, DocMap: &docMap, OrphanFiles: &orphanFiles}
 
 	tmpl = packr.NewBox("./templates")
 	static = packr.NewBox("./static")
@@ -142,7 +157,7 @@ func overviewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("Cant parse the template %v", err)
 	}
-	t.Execute(w, docMap)
+	t.Execute(w, data)
 }
 
 func detailsHandler(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +166,7 @@ func detailsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("Cant parse the template %v", err)
 	}
-	t.Execute(w, docMap)
+	t.Execute(w, data)
 }
 
 func otherHandler(w http.ResponseWriter, r *http.Request) {
@@ -160,12 +175,13 @@ func otherHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("Cant parse the template %v", err)
 	}
-	t.Execute(w, docMap)
+	t.Execute(w, data)
 }
 
 // Files handler opens a local file and then returns to the overview page.
 func filesHandler(w http.ResponseWriter, r *http.Request) {
 	go open(r.URL.Query().Get("path"))
+	// Use redirect code 303 to avoid that the browser caches away the actual GET request when opening a file.
 	http.Redirect(w, r, "/", 303)
 }
 
@@ -179,6 +195,39 @@ func getInputDir(cf string) string {
 		log.Fatalf("Cant find current working directory %v", err)
 	}
 	return path.Join(wd, p)
+}
+
+// parseFile tries to create a formal File from the given path.
+// If it encounters anything strange it will add that to a comment.
+func parseFile(path string, rootDir string) {
+	relPath, err := filepath.Rel(rootDir, path)
+	if err != nil {
+		log.Fatalf("%s is not in %s %v", path, rootDir, err)
+	}
+	name := filepath.Base(path)
+	// First check if the filename starts with the project number, indicating that this is a project file.
+	if !strings.HasPrefix(name, projectNumber) {
+		return
+	}
+
+	// Then check if the filename is in the docMap retrieved from the number log file
+	for k, v := range docMap {
+		if strings.HasPrefix(name, k) {
+			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath})
+			return
+		}
+		// If not found try to convert filenames to all lower case when comparing to work around how filenames work in Windows.
+		// If a match is found now, add a comment to fix file naming.
+		if strings.HasPrefix(strings.ToLower(name), strings.ToLower(k)) {
+			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath, Comment: "The case of the filename and docnr does not match."})
+			return
+		}
+	}
+
+	// If not found this is considered an orphan file and added to the orphan file list.
+	orphanFiles = append(orphanFiles, File{FilePath: path, RelPath: relPath})
+
+	return
 }
 
 func searchForDocs(rootDir string) {
@@ -196,17 +245,8 @@ func searchForDocs(rootDir string) {
 			// fmt.Printf("skipping a dir without errors: %+v \n", info.Name())
 		}
 		if !info.IsDir() {
-			for k, v := range docMap {
-				// Convert filenames to lower case when comparing to work around how filenames work in Windows.
-				if strings.HasPrefix(strings.ToLower(info.Name()), strings.ToLower(k)) {
-					relPath, err := filepath.Rel(rootDir, path)
-					if err != nil {
-						log.Fatalf("Cant find current working directory %v", err)
-					}
-					docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath})
-					break
-				}
-			}
+			// Try to parse the file/filename to add it to the project files.
+			parseFile(path, rootDir)
 			// fmt.Printf("Add file to list: %q\n", path)
 			return nil
 		}
