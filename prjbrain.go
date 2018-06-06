@@ -205,12 +205,8 @@ func parseFile(path string, rootDir string) {
 		log.Fatalf("%s is not in %s %v", path, rootDir, err)
 	}
 	name := filepath.Base(path)
-	// First check if the filename starts with the project number, indicating that this is a project file.
-	if !strings.HasPrefix(name, projectNumber) {
-		return
-	}
 
-	// Then check if the filename is in the docMap retrieved from the number log file
+	// Check if the filename is in the docMap retrieved from the number log file
 	for k, v := range docMap {
 		if strings.HasPrefix(name, k) {
 			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath})
@@ -224,8 +220,11 @@ func parseFile(path string, rootDir string) {
 		}
 	}
 
-	// If not found this is considered an orphan file and added to the orphan file list.
-	orphanFiles = append(orphanFiles, File{FilePath: path, RelPath: relPath})
+	// Check if the filename starts with the project number, indicating that this is a project file.
+	if strings.HasPrefix(name, projectNumber) {
+		// This is considered an orphan file and added to the orphan file list.
+		orphanFiles = append(orphanFiles, File{FilePath: path, RelPath: relPath})
+	}
 
 	return
 }
