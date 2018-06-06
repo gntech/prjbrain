@@ -18,7 +18,7 @@
         <td>B</td>
         <td>C</td>
         <td>{{ .RelPath }}</td>
-        <td>{{ .Comment }}</td>
+        <td class="warning">{{ .Comment }}</td>
         <td>
           <form class="file-form" action="/files" method="get">
             <input type="hidden" name="path" value="{{ .RelPath }}">
