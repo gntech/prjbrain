@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -27,6 +28,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -39,20 +41,23 @@ import (
 
 // Doc struct is a generic document
 type Doc struct {
-	DocNr    string
-	Title    string
-	Path     string
-	Revision string
-	Files    []File
+	DocNr string
+	Title string
+	Prj   string
+	Nr    string
+	Rev   string
+	Files []File
 }
 
 // File struct
 type File struct {
+	DocNr    string
+	Prj      string
+	Nr       string
+	Rev      string
+	Comment  string
 	FilePath string
 	RelPath  string
-	Rev      string
-	DocNr    string
-	Comment  string
 }
 
 // Data struct contains all the data sent to the pages in the web interface
@@ -88,6 +93,7 @@ func main() {
 	viper.SetDefault("pn_start_row", 5)
 	viper.SetDefault("title_col", "B")
 	viper.SetDefault("docnr_col", "C")
+	viper.SetDefault("docnr_pattern", "([^_\\W]+)")
 	viper.SetDefault("number_log", "testfiles/Nummerliggare.xlsm")
 	viper.SetDefault("subdirs_to_skip", []string{".git"})
 
@@ -197,31 +203,31 @@ func getInputDir(cf string) string {
 	return path.Join(wd, p)
 }
 
-// parseFile tries to create a formal File from the given path.
-// If it encounters anything strange it will add that to a comment.
+// parseFile tries to determine if a file belongs to a document.
 func parseFile(path string, rootDir string) {
+	var comment string
 	relPath, err := filepath.Rel(rootDir, path)
 	if err != nil {
 		log.Fatalf("%s is not in %s %v", path, rootDir, err)
 	}
 	name := filepath.Base(path)
 
-	// Check if the filename is in the docMap retrieved from the number log file
+	ref, prj, nr, rev, err := parseDocNr(name)
+	if err != nil {
+		return
+	}
+
+	// Check if the file belongs to document in the docMap retrieved from the number log file
 	for k, v := range docMap {
-		if strings.HasPrefix(name, k) {
-			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath})
-			return
-		}
-		// If not found try to convert filenames to all lower case when comparing to work around how filenames work in Windows.
-		// If a match is found now, add a comment to fix file naming.
-		if strings.HasPrefix(strings.ToLower(name), strings.ToLower(k)) {
-			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath, Comment: "The case of the filename and docnr does not match."})
+		if ref == k {
+			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath, Rev: rev, Prj: prj, Nr: nr, Comment: comment})
+			// Yes!
 			return
 		}
 	}
 
-	// Check if the filename starts with the project number, indicating that this is a project file.
-	if strings.HasPrefix(name, projectNumber) {
+	// Check if at least the project number is correct, indicating that this is a project file that have been missed in the number log.
+	if strings.EqualFold(prj, projectNumber) {
 		// This is considered an orphan file and added to the orphan file list.
 		orphanFiles = append(orphanFiles, File{FilePath: path, RelPath: relPath})
 	}
@@ -287,17 +293,41 @@ func initDocMap(nrLogFile string) {
 	docMap = make(map[string]*Doc)
 
 	for _, row := range sheet.Rows()[viper.GetInt("pn_start_row")-2:] {
-		docnr := row.Cell(viper.GetString("docnr_col")).GetFormattedValue()
+		docNr := row.Cell(viper.GetString("docnr_col")).GetFormattedValue()
 		if err != nil {
 			log.Fatal(err)
 		}
-		if docnr != "" {
-			// nr := row.Cells[0].String()
+		if docNr != "" {
 			title := row.Cell(viper.GetString("title_col")).GetFormattedValue()
 
 			// Initialize the project document map with the numbers from the number log.
-			docMap[docnr] = &Doc{Title: title, DocNr: docnr}
-			// fmt.Printf("%s : %s : %s\n", nr, docnr, title)
+			ref, prj, nr, rev, err := parseDocNr(docNr)
+			if err != nil {
+				log.Printf("Error: %s, %s", err, docNr)
+				continue
+			}
+			docMap[ref] = &Doc{Title: title, DocNr: docNr, Prj: prj, Nr: nr, Rev: rev}
 		}
 	}
+}
+
+func parseDocNr(docNr string) (ref string, prj string, nr string, rev string, err error) {
+	re := regexp.MustCompile(viper.GetString("docnr_pattern"))
+	result := re.FindAllString(docNr, -1)
+
+	if len(result) < 2 {
+		err = errors.New("Document number is not formatted correctly")
+		return
+	}
+
+	prj = result[0]
+	nr = result[1]
+
+	ref = strings.ToLower(prj + nr)
+
+	if len(result) > 2 {
+		rev = result[2]
+	}
+
+	return
 }

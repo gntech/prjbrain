@@ -6,17 +6,17 @@
   <details>
     <summary>{{ .DocNr }} - {{ .Title }}</summary>
     <table class="files">
-        <th>Status</th>
-        <th>Name</th>
+        <th>Prj</th>
+        <th>Nr</th>
         <th>Rev</th>
         <th>Path</th>
         <th>Comment</th>
         <th>Action</th>
     {{ range .Files }}
       <tr>
-        <td>A</td>
-        <td>B</td>
-        <td>C</td>
+        <td>{{ .Prj }}</td>
+        <td>{{ .Nr }}</td>
+        <td>{{ .Rev }}</td>
         <td>{{ .RelPath }}</td>
         <td class="warning">{{ .Comment }}</td>
         <td>
