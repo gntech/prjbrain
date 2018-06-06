@@ -6,7 +6,6 @@
   <details>
     <summary>{{ .DocNr }} - {{ .Title }}</summary>
     <table class="files">
-        <th>Prj</th>
         <th>Nr</th>
         <th>Rev</th>
         <th>Path</th>
@@ -14,7 +13,6 @@
         <th>Action</th>
     {{ range .Files }}
       <tr>
-        <td>{{ .Prj }}</td>
         <td>{{ .Nr }}</td>
         <td>{{ .Rev }}</td>
         <td>{{ .RelPath }}</td>

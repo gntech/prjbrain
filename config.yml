@@ -2,9 +2,13 @@
 
 # Setting the number_log is mandatory
 number_log: Number_log.xlsx   # The path to the .xlsx or .xlsm file which holds the document number list
-#docnr_pattern: "([^_\\W]+)"  # The Regex pattern that is used to divide the document number
 
-#prjnr: P1234                   # Explicit project number, will override number from number_log
+# Below are the regex pattern used to find document number and revision from a string
+# See https://golang.org/pkg/regexp/syntax/ for more details on how to construct these
+#docnr_pattern: "(^[[:alnum:]]+-[[:alnum:]]+)"
+#rev_pattern:   "(?:[\\-_])([[:alnum:]]{2})(?:$|[\\-_\\.])"
+
+#prjnr: P1234                 # Explicit project number, will override number from number_log
 #prjname: Project name        # Explicit project name, will override name from number_log
 #prjnr_cell: C1               # The cell in the number_log which contains the project number
 #prjtitle_cell: C2            # The cell in the number_log which contains the project title

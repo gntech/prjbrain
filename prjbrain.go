@@ -39,11 +39,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Doc struct is a generic document
+// Doc struct is a virtual document.
+// A document can have many representations on disk in form of different File.
 type Doc struct {
 	DocNr string
 	Title string
-	Prj   string
 	Nr    string
 	Rev   string
 	Files []File
@@ -52,7 +52,6 @@ type Doc struct {
 // File struct
 type File struct {
 	DocNr    string
-	Prj      string
 	Nr       string
 	Rev      string
 	Comment  string
@@ -77,6 +76,10 @@ var tmpl packr.Box
 var static packr.Box
 var data Data
 
+// The default patterns for rev and nr. Need to be constant to be able to use in tests.
+const nrPattern string = "(^[[:alnum:]]+-[[:alnum:]]+)"
+const revPattern string = "(?:[\\-_])([[:alnum:]]{2})(?:$|[\\-_\\.])"
+
 func main() {
 	if len(os.Args) > 1 {
 		viper.SetConfigFile(os.Args[1]) // Prefer to use config file provided as argument
@@ -93,7 +96,8 @@ func main() {
 	viper.SetDefault("pn_start_row", 5)
 	viper.SetDefault("title_col", "B")
 	viper.SetDefault("docnr_col", "C")
-	viper.SetDefault("docnr_pattern", "([^_\\W]+)")
+	viper.SetDefault("rev_pattern", revPattern)
+	viper.SetDefault("nr_pattern", nrPattern)
 	viper.SetDefault("number_log", "testfiles/Nummerliggare.xlsm")
 	viper.SetDefault("subdirs_to_skip", []string{".git"})
 
@@ -209,29 +213,29 @@ func parseFile(path string, rootDir string) {
 	relPath, err := filepath.Rel(rootDir, path)
 	if err != nil {
 		log.Fatalf("%s is not in %s %v", path, rootDir, err)
+		return
 	}
 	name := filepath.Base(path)
 
-	ref, prj, nr, rev, err := parseDocNr(name)
+	nr, rev, err := parseDocNr(name)
 	if err != nil {
 		return
 	}
 
 	// Check if the file belongs to document in the docMap retrieved from the number log file
 	for k, v := range docMap {
-		if ref == k {
-			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath, Rev: rev, Prj: prj, Nr: nr, Comment: comment})
+		if nr == k {
+			docMap[k].Files = append(v.Files, File{FilePath: path, RelPath: relPath, Rev: rev, Nr: nr, Comment: comment})
 			// Yes!
 			return
 		}
 	}
 
 	// Check if at least the project number is correct, indicating that this is a project file that have been missed in the number log.
-	if strings.EqualFold(prj, projectNumber) {
+	if strings.HasPrefix(name, projectNumber) {
 		// This is considered an orphan file and added to the orphan file list.
 		orphanFiles = append(orphanFiles, File{FilePath: path, RelPath: relPath})
 	}
-
 	return
 }
 
@@ -247,16 +251,12 @@ func searchForDocs(rootDir string) {
 					return filepath.SkipDir
 				}
 			}
-			// fmt.Printf("skipping a dir without errors: %+v \n", info.Name())
 		}
 		if !info.IsDir() {
 			// Try to parse the file/filename to add it to the project files.
 			parseFile(path, rootDir)
-			// fmt.Printf("Add file to list: %q\n", path)
 			return nil
 		}
-
-		// fmt.Printf("visited dir: %q\n", path)
 		return nil
 	})
 
@@ -294,40 +294,44 @@ func initDocMap(nrLogFile string) {
 
 	for _, row := range sheet.Rows()[viper.GetInt("pn_start_row")-2:] {
 		docNr := row.Cell(viper.GetString("docnr_col")).GetFormattedValue()
-		if err != nil {
-			log.Fatal(err)
-		}
+
 		if docNr != "" {
 			title := row.Cell(viper.GetString("title_col")).GetFormattedValue()
 
 			// Initialize the project document map with the numbers from the number log.
-			ref, prj, nr, rev, err := parseDocNr(docNr)
+			nr, rev, err := parseDocNr(docNr)
 			if err != nil {
 				log.Printf("Error: %s, %s", err, docNr)
 				continue
 			}
-			docMap[ref] = &Doc{Title: title, DocNr: docNr, Prj: prj, Nr: nr, Rev: rev}
+			docMap[nr] = &Doc{Title: title, DocNr: docNr, Nr: nr, Rev: rev}
 		}
 	}
 }
 
-func parseDocNr(docNr string) (ref string, prj string, nr string, rev string, err error) {
-	re := regexp.MustCompile(viper.GetString("docnr_pattern"))
-	result := re.FindAllString(docNr, -1)
+func parseDocNr(docNr string) (nr string, rev string, err error) {
+	nr = getNr(docNr)
+	rev = getRev(docNr)
 
-	if len(result) < 2 {
+	if nr == "" {
 		err = errors.New("Document number is not formatted correctly")
 		return
 	}
 
-	prj = result[0]
-	nr = result[1]
+	return
+}
 
-	ref = strings.ToLower(prj + nr)
+func getNr(s string) (nr string) {
+	re := regexp.MustCompile(viper.GetString("nr_pattern"))
+	nr = re.FindString(s)
+	return
+}
 
-	if len(result) > 2 {
-		rev = result[2]
+func getRev(s string) (rev string) {
+	re := regexp.MustCompile(viper.GetString("rev_pattern"))
+	temp := re.FindStringSubmatch(s)
+	if len(temp) >= 2 {
+		rev = temp[1]
 	}
-
 	return
 }
