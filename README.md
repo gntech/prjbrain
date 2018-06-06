@@ -1,6 +1,6 @@
 # Prjbrain
 
-The idea behind Prjbrain is that I by looking through your product development documentation provide valuable insight into the status of the project.
+The idea behind Prjbrain is that it helps keeping product development documentation in good order. It does this by parsing the content of your product development documentation and provides valuable insight into the status of the project. Suggesting where things looks out of order.
 
 ## Current functionality
 
