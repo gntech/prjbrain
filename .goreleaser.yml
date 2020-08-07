@@ -3,15 +3,15 @@
 builds:
   - binary: prjbrain 
     goos:
-      - windows
       - linux
     goarch:
       - amd64
     hooks:
       pre: packr
       post: packr clean
-archive:
-  format: tar.gz
-  files:
-    - config.yml
+archives:
+  -
+    format: tar.gz
+    files:
+      - config.yml
 
